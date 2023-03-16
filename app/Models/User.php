@@ -12,6 +12,16 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    protected $table = 'users';
+    protected $primaryKey = 'id';
+    public $timestamps = false;
+
+    // Relasi dengan tabel ratings
+    public function ratings()
+    {
+        return $this->hasMany('App\Models\Rating', 'user_id', 'id');
+    }
+
     /**
      * The attributes that are mass assignable.
      *

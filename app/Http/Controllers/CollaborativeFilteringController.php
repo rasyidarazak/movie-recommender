@@ -44,7 +44,7 @@ class CollaborativeFilteringController extends Controller
         arsort($average_ratings);
 
         // Ambil 5 rekomendasi teratas
-        $recommendations = array_slice($average_ratings, 0, 28, true);
+        $recommendations = array_slice($average_ratings, 0, 5, true);
 
         // Hitung MAE (Mean Absolute Error) untuk pengguna tersebut
         $test_ratings = $users[$user];
