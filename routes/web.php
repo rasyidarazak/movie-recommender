@@ -13,4 +13,4 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', [App\Http\Controllers\CollaborativeFilteringController::class, 'index']);
+Route::get('/collaborative-filtering', [App\Http\Controllers\CollaborativeFilteringController::class, 'index']);
