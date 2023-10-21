@@ -13,5 +13,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/', [App\Http\Controllers\HomeController::class, 'index']);
 Route::get('/collaborative-filtering', [App\Http\Controllers\CollaborativeFilteringController::class, 'index']);
 Route::get('/content-based-filtering', [App\Http\Controllers\ContentBasedFilteringController::class, 'index']);

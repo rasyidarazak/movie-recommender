@@ -29,6 +29,7 @@ class CollaborativeFilteringController extends Controller
         $film_ratings = [];
         foreach ($neighbors as $other_user => $similarity) {
             foreach ($films as $film => $users_ratings) {
+                // Menyimpan rating film-film dari $other_user
                 $rating = $users_ratings[$other_user] ?? null;
                 if ($rating !== null) {
                     $film_ratings[$film][] = $rating;
@@ -39,7 +40,7 @@ class CollaborativeFilteringController extends Controller
         foreach ($film_ratings as $film => $ratings) {
             $average_ratings[$film] = array_sum($ratings) / count($ratings);
         }
-
+        
         // Urutkan rekomendasi berdasarkan rating tertinggi
         arsort($average_ratings);
 
@@ -52,23 +53,25 @@ class CollaborativeFilteringController extends Controller
         foreach ($recommendations as $movie_id => $rating) {
             $predicted_ratings[$movie_id] = $rating;
         }
-        $mae = $this->calculate_mae($test_ratings, $predicted_ratings);
+        $mae = $this->calculate_mae($predicted_ratings, $test_ratings);
         
         // Tampilkan rekomendasi dan MAE
-        echo "Rekomendasi untuk pengguna $user:<br>";
-        foreach ($recommendations as $movie_id => $rating) {
-            $movie = DB::table('movies')->where('id', $movie_id)->first();
-            $movie_name = $movie ? $movie->title : "Film tidak ditemukan";
-            echo "- $movie_name dengan rating $rating <br>";
-        }
-        echo "MAE: $mae\n";
+        // echo "Rekomendasi untuk pengguna $user:<br>";
+        // foreach ($recommendations as $movie_id => $rating) {
+        //     $movie = DB::table('movies')->where('id', $movie_id)->first();
+        //     $movie_name = $movie ? $movie->title : "Film tidak ditemukan";
+        //     echo "- $movie_name dengan rating $rating <br>";
+        // }
+        // echo "MAE: $mae\n";
+        
+        return view('collaborative_filtering', compact('user', 'recommendations', 'mae'));
     }
 
-    public function find_similar_users($users, $user_id, $k)
+    private function find_similar_users($users, $user_id, $k)
     {
-        $similarities = [];
+        $neighbors = [];
         $user_ratings = $users[$user_id];
-        unset($users[$user_id]);
+        unset($users[$user_id]); // Hilangkan rating dari user_id itu sendiri
         foreach ($users as $other_user_id => $other_user_ratings) {
             $similarity = $this->cosine_similarity($user_ratings, $other_user_ratings);
             $similarities[$other_user_id] = $similarity;
@@ -78,29 +81,15 @@ class CollaborativeFilteringController extends Controller
         return $neighbors;
     }
 
-    public function calculate_mae($test_ratings, $predicted_ratings)
+    private function cosine_similarity($user1_ratings, $user2_ratings)
     {
-        $errors = [];
-        foreach ($predicted_ratings as $movie_id => $predicted_rating) {
-            $test_rating = $test_ratings[$movie_id] ?? null;
-            if ($test_rating !== null) {
-                $errors[] = abs($test_rating - $predicted_rating);
-            }
-        }
-        if (count($errors) > 0) {
-            $mae = array_sum($errors) / count($errors);
-        } else {
-            $mae = 0;
-        }
-        return $mae;
-    }
-
-    public function cosine_similarity($user1_ratings, $user2_ratings)
-    {
+        // Menyimpan hasil perkalian antara rating dari user 1 dan user 2 pada film-film yang sama.
         $dot_product = 0;
+        // Menyimpan nilai akar kuadrat dari jumlah kuadrat rating yang diberikan oleh user
         $user1_norm = 0;
         $user2_norm = 0;
         foreach ($user1_ratings as $movie_id => $rating) {
+            // Cek apakah user1 dan user2 memberi rating pada film yang sama
             if (isset($user2_ratings[$movie_id])) {
                 $dot_product += $rating * $user2_ratings[$movie_id];
             } else {
@@ -118,5 +107,23 @@ class CollaborativeFilteringController extends Controller
         } else {
             return $dot_product / ($user1_norm * $user2_norm);
         }
+    }
+
+    private function calculate_mae($test_ratings, $predicted_ratings)
+    {
+        $errors = [];
+        foreach ($predicted_ratings as $movie_id => $predicted_rating) {
+            // Cek apakah ada film yang sama pada rating sebenarnya dan rating prediksi
+            $test_rating = $test_ratings[$movie_id] ?? null;
+            if ($test_rating !== null) {
+                $errors[] = abs($test_rating - $predicted_rating);
+            }
+        }
+        if (count($errors) > 0) {
+            $mae = array_sum($errors) / count($errors);
+        } else {
+            $mae = 0;
+        }
+        return $mae;
     }
 }
